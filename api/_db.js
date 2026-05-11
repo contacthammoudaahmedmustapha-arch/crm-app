@@ -1,4 +1,4 @@
-// api/_db.js — Shared MySQL connection (Aiven)
+// api/_db.js
 import mysql from 'mysql2/promise';
 
 let pool;
@@ -11,7 +11,7 @@ export function getPool() {
       user:     process.env.AIVEN_USER,
       password: process.env.AIVEN_PASSWORD,
       database: process.env.AIVEN_DATABASE,
-      ssl:      { rejectUnauthorized: true },
+      ssl:      { rejectUnauthorized: false },  // ← false, pas true
       waitForConnections: true,
       connectionLimit: 5,
       queueLimit: 0,
