@@ -12,7 +12,7 @@ function getPool() {
       database: process.env.AIVEN_DATABASE,
       ssl: { rejectUnauthorized: false },
       waitForConnections: true,
-      connectionLimit: 5,
+      connectionLimit: 20,
     });
   }
   return pool;
