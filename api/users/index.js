@@ -1,12 +1,10 @@
-// api/users/index.js — GET (list) + POST (create) — admin only
-import bcrypt from 'bcryptjs';
-import { getPool } from '../_db.js';
-import { requireAdmin, requireAuth } from '../_auth.js';
+const bcrypt = require('bcryptjs');
+const { getPool } = require('../_db.js');
+const { requireAdmin } = require('../_auth.js');
 
-export default async function handler(req, res) {
+module.exports = async function handler(req, res) {
   const pool = getPool();
 
-  // GET — list users with contact count (admin only)
   if (req.method === 'GET') {
     const user = requireAdmin(req, res);
     if (!user) return;
@@ -14,19 +12,13 @@ export default async function handler(req, res) {
       const [rows] = await pool.query(`
         SELECT u.id, u.nom, u.prenom, u.username, u.role, u.active, u.last_login,
                COUNT(c.id) AS nb_contacts
-        FROM users u
-        LEFT JOIN contacts c ON c.created_by = u.username
-        GROUP BY u.id
-        ORDER BY u.id ASC
+        FROM users u LEFT JOIN contacts c ON c.created_by = u.username
+        GROUP BY u.id ORDER BY u.id ASC
       `);
       return res.status(200).json(rows);
-    } catch (err) {
-      console.error(err);
-      return res.status(500).json({ error: 'Erreur serveur' });
-    }
+    } catch (err) { return res.status(500).json({ error: 'Erreur serveur' }); }
   }
 
-  // POST — create user (admin only)
   if (req.method === 'POST') {
     const admin = requireAdmin(req, res);
     if (!admin) return;
@@ -36,16 +28,15 @@ export default async function handler(req, res) {
     try {
       const hashed = await bcrypt.hash(password, 10);
       await pool.query(
-        'INSERT INTO users (nom, prenom, username, password, role, active) VALUES (?, ?, ?, ?, ?, 1)',
+        'INSERT INTO users (nom,prenom,username,password,role,active) VALUES (?,?,?,?,?,1)',
         [nom, prenom, username, hashed, role || 'user']
       );
       return res.status(201).json({ message: 'Utilisateur créé' });
     } catch (err) {
-      if (err.code === 'ER_DUP_ENTRY')
-        return res.status(409).json({ error: 'Username déjà utilisé' });
+      if (err.code === 'ER_DUP_ENTRY') return res.status(409).json({ error: 'Username déjà utilisé' });
       return res.status(500).json({ error: 'Erreur serveur' });
     }
   }
 
   return res.status(405).end();
-}
+};
